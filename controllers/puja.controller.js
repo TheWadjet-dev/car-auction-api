@@ -2,9 +2,28 @@ import Puja from '../models/puja.model.js';
 
 export const crearPuja = async (req, res) => {
   try {
-    const puja = new Puja(req.body);
-    await puja.save();
-    res.status(201).json(puja);
+    const { carroId, monto } = req.body;
+
+    // Verificar si la subasta está activa y dentro del tiempo límite
+    const carro = await Carro.findById(carroId);
+    if (!carro || carro.estado !== 'activo') {
+      return res.status(400).json({ error: 'El carro no está disponible para subastas' });
+    }
+    if (new Date() > carro.fechaLimite) {
+      return res.status(400).json({ error: 'La subasta ha finalizado' });
+    }
+
+    // Verificar si la puja es mayor a la actual
+    const pujaMasAlta = await Puja.findOne({ carroId }).sort({ monto: -1 });
+    if (pujaMasAlta && monto <= pujaMasAlta.monto) {
+      return res.status(400).json({ error: 'La puja debe ser mayor a la actual' });
+    }
+
+    // Crear la nueva puja
+    const nuevaPuja = new Puja(req.body);
+    await nuevaPuja.save();
+
+    res.status(201).json(nuevaPuja);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -39,3 +58,5 @@ export const eliminarPuja = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+

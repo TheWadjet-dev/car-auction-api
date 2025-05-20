@@ -21,3 +21,15 @@ export const registrarCliente = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+export const obtenerHistorialCliente = async (req, res) => {
+  try {
+    const cliente = await Cliente.findById(req.params.id)
+      .populate('pujasActivas')
+      .populate('subastasGanadas');
+    if (!cliente) return res.status(404).json({ error: 'Cliente no encontrado' });
+    res.json(cliente);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
